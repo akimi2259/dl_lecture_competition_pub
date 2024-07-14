@@ -23,8 +23,8 @@ class ThingsMEGDataset(torch.utils.data.Dataset):
         X_path = os.path.join(self.data_dir, f"{self.split}_X", str(i).zfill(5) + ".npy")
         
         y = np.load(X_path)
-        y_max = max(y)
-        y_min = min(y)
+        y_max = np.max(y)
+        y_min = np.min(y)
         y = (y-y_min)/(y_max-y_min)
         
         X = torch.from_numpy(y)
