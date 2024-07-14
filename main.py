@@ -68,7 +68,7 @@ def run(args: DictConfig):
         scaler = torch.cuda.amp.GradScaler()
         
         for X, y, subject_idxs in tqdm(train_loader, desc="Train"):
-            X, y = X.to(args.device), y.to(args.device)
+            X, y = X.to(args.device, non_blocking=True), y.to(args.device, non_blocking=True)
             
             optimizer.zero_grad()
 
