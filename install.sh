@@ -1,5 +1,5 @@
 git clone https://github.com/akimi2259/dl_lecture_competition_pub.git
-cd dl_lecture_competition/
+cd dl_lecture_competition_pub/
 git checkout MEG-competition
 
 gsutil cp gs://dl-common/2024/MEG/data-omni.zip ./data/
