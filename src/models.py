@@ -26,8 +26,7 @@ class BasicConvClassifier(nn.Module):
             nn.Linear(hid_dim1, hid_dim2),
             nn.ReLU(),
             nn.Dropout(0.2),
-            nn.Linear(hid_dim2, num_classes),
-            nn.Softmax()
+            nn.Linear(hid_dim2, num_classes)
         )
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
