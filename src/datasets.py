@@ -57,11 +57,6 @@ class ThingsMEGDataset(torch.utils.data.Dataset):
         X_path = os.path.join(self.data_dir, f"{self.split}_X", str(i).zfill(5) + ".npy")
         
         y = np.load(X_path)
-        y_max = np.max(y,axis=1)
-        y_min = np.min(y,axis=1)
-        y = (y.T-y_min)/(y_max-y_min)
-        y = y.T
-        y = np.apply_along_axis(adjust_wave_data, 1, y)
         
         X = torch.from_numpy(y)
         
