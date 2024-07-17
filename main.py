@@ -10,7 +10,7 @@ from termcolor import cprint
 from tqdm import tqdm
 
 from src.datasets import ThingsMEGDataset
-from src.models import BasicConvClassifier
+from src.models import BasicConvClassifier, TransformerEncoderModel, BidirectionalRNN
 from src.utils import set_seed
 
 
@@ -39,14 +39,25 @@ def run(args: DictConfig):
     # ------------------
     #       Model
     # ------------------
+    """model = BidirectionalRNN(
+        train_set.num_classes, train_set.num_channels#, train_set.seq_len
+    ).to(args.device)"""
     model = BasicConvClassifier(
         train_set.num_classes, train_set.seq_len, train_set.num_channels
     ).to(args.device)
+    print(model)
+    def count_parameters(model):
+        return sum(param.numel() for param in model.parameters() if param.requires_grad)
+
+    # 表示
+    print(f"Total trainable parameters: {count_parameters(model)}")
+    #exit()
 
     # ------------------
     #     Optimizer
     # ------------------
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    #optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-3)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=5e-4)
 
     # ------------------
     #   Start training
@@ -57,6 +68,7 @@ def run(args: DictConfig):
     ).to(args.device)
     
     torch.backends.cudnn.benchmark = True
+    #torch.backends.cuda.enable_flash_sdp(True)
       
     for epoch in range(args.epochs):
         print(f"Epoch {epoch+1}/{args.epochs}")
@@ -66,18 +78,42 @@ def run(args: DictConfig):
         model.train()
         
         scaler = torch.cuda.amp.GradScaler()
-        
+        n=0
         for X, y, subject_idxs in tqdm(train_loader, desc="Train"):
+            n+=1
+            #input_data = input_data.to(torch.long)
             X, y = X.to(args.device, non_blocking=True), y.to(args.device, non_blocking=True)
             
-            optimizer.zero_grad()
+            y_pred = model(X)
+            
+            """loss = F.cross_entropy(y_pred, y)
+            train_loss.append(loss.item())"""
 
+
+            '''l1 = torch.tensor(0., requires_grad=True).to(args.device)
+            for w in model.parameters():
+                l1 = l1 + torch.norm(w, 1)
+            loss = loss + l1 *0.5'''
+            
+            """optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+            acc = accuracy(y_pred, y)
+            train_acc.append(acc.item())"""
+            
+            ## old version 量子化がうまくならないので却下
             y_pred = model(X)
             
             # Runs the forward pass with autocasting.
             with torch.cuda.amp.autocast():
                 y_pred = model(X)
                 loss = F.cross_entropy(y_pred, y)
+            
+            '''l1 = torch.tensor(0., requires_grad=True).to(args.device)
+            for w in model.parameters():
+                l1 = l1 + torch.norm(w, 1)
+            loss = loss + l1'''
 
             scaler.scale(loss).backward()
 
@@ -89,6 +125,8 @@ def run(args: DictConfig):
             
             acc = accuracy(y_pred, y)
             train_acc.append(acc.item())
+            #if n % 100 == 0:
+            #    print(train_acc,":train_acc")
 
         model.eval()
         for X, y, subject_idxs in tqdm(val_loader, desc="Validation"):

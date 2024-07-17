@@ -57,8 +57,9 @@ class ThingsMEGDataset(torch.utils.data.Dataset):
         X_path = os.path.join(self.data_dir, f"{self.split}_X", str(i).zfill(5) + ".npy")
         
         y = np.load(X_path)
+        y = (y - np.mean(y)) / np.std(y)
         
-        X = torch.from_numpy(y)
+        X = torch.from_numpy(y)#.half()
         
         subject_idx_path = os.path.join(self.data_dir, f"{self.split}_subject_idxs", str(i).zfill(5) + ".npy")
         subject_idx = torch.from_numpy(np.load(subject_idx_path))
