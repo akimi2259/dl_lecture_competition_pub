@@ -308,6 +308,35 @@ class VQAModel(nn.Module):
 
         return x
 
+class ZCAWhitening():
+    def __init__(self, epsilon=1e-4, device="cuda"):  # 計算が重いのでGPUを用いる
+        self.epsilon = epsilon
+        self.device = device
+
+    def fit(self, images):  # 変換行列と平均をデータから計算
+        x = images[0][0].reshape(1, -1)
+        self.mean = torch.zeros([1, x.size()[1]]).to(self.device)
+        con_matrix = torch.zeros([x.size()[1], x.size()[1]]).to(self.device)
+        for i in range(len(images)):  # 各データについての平均を取る
+            x = images[i][0].reshape(1, -1).to(self.device)
+            self.mean += x / len(images)
+            con_matrix += torch.mm(x.t(), x) / len(images)
+            if i % 10000 == 0:
+                print("{0}/{1}".format(i, len(images)))
+        self.E, self.V = torch.linalg.eigh(con_matrix)  # 固有値分解
+        self.E = torch.max(self.E, torch.zeros_like(self.E)) # 誤差の影響で負になるのを防ぐ
+        self.ZCA_matrix = torch.mm(torch.mm(self.V, torch.diag((self.E.squeeze()+self.epsilon)**(-0.5))), self.V.t())
+        print("completed!")
+
+    def __call__(self, x):
+        size = x.size()
+        x = x.reshape(1, -1).to(self.device)
+        x -= self.mean
+        x = torch.mm(x, self.ZCA_matrix.t())
+        x = x.reshape(tuple(size))
+        x = x.to("cpu")
+        return x
+
 
 # 4. 学習の実装
 def train(model, dataloader, optimizer, criterion, device):
@@ -364,12 +393,21 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # dataloader / model
-    transform = transforms.Compose([
+    transform_test = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor()
     ])
-    train_dataset = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=transform)
-    test_dataset = VQADataset(df_path="./data/valid.json", image_dir="./data/valid", transform=transform, answer=False)
+    transform_train = transforms.Compose([
+                                transforms.Resize((224, 224)),
+                                transforms.RandomHorizontalFlip(p=0.2),
+                                #transforms.RandomRotation(degrees=(-30, 30)),# horizontally flipping
+                                transforms.RandomCrop(32, padding=(4, 4, 4, 4), padding_mode='constant'),  # random cropping
+                                #transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5),
+                                #transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
+                                transforms.ToTensor(),
+                                transforms.RandomErasing(p=0.2, scale=(0.02, 0.33), ratio=(0.3, 3.3)),])
+    train_dataset = VQADataset(df_path="./data/train.json", image_dir="./data/train", transform=transform_train)
+    test_dataset = VQADataset(df_path="./data/valid.json", image_dir="./data/valid", transform=transform_test, answer=False)
     test_dataset.update_dict(train_dataset)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True)
