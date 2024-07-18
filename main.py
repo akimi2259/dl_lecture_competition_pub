@@ -42,10 +42,8 @@ def run(args: DictConfig):
     """model = BidirectionalRNN(
         train_set.num_classes, train_set.num_channels#, train_set.seq_len
     ).to(args.device)"""
-    model = BasicConvClassifier(
-        train_set.num_classes, train_set.seq_len, train_set.num_channels
-    ).to(args.device)
-    print(model)
+    model = BasicConvClassifier(train_set.num_classes, train_set.seq_len, train_set.num_channels).to(args.device)
+    #model = torch.load(R"C:\Users\akimi\dl_lecture_competition_pub\outputs\2024-07-18\15-14-06\model_last.pt").to(args.device)
     def count_parameters(model):
         return sum(param.numel() for param in model.parameters() if param.requires_grad)
 

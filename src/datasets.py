@@ -103,10 +103,10 @@ class ThingsMEGDataset(torch.utils.data.Dataset):
         X_path = os.path.join(self.data_dir, f"{self.split}_X", str(i).zfill(5) + ".npy")
         
         y = np.load(X_path)
-        y = ((y - np.median(y)) / np.std(y)) + 0.5
-        if self.split == "train":
+        #y = ((y - np.mean(y)) / np.std(y))
+        """if self.split == "train":
             if random.uniform(0,1) < self.p:
-                y = image_augmentation(y)
+                y = image_augmentation(y)"""
         
         X = torch.from_numpy(y)#.half()
         

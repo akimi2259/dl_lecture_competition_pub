@@ -116,9 +116,10 @@ class BasicConvClassifier(nn.Module):#channel * length
 
         self.blocks = nn.Sequential(
             ConvBlock(in_channels, in_channels),
-            ConvBlock(in_channels, in_channels),
             ConvBlock(in_channels, hid_dim1),
-            #ConvBlock(hid_dim1, hid_dim1),
+            ConvBlock(hid_dim1, hid_dim1),
+            ConvBlock(hid_dim1, hid_dim1),
+            ConvBlock(hid_dim1, hid_dim1),
         )
 
         self.head = nn.Sequential(
@@ -157,13 +158,14 @@ class ConvBlock(nn.Module):
 
         self.conv0 = nn.Conv1d(in_dim, out_dim, kernel_size, padding="same")
         self.conv1 = nn.Conv1d(out_dim, out_dim, kernel_size, padding="same")
-        #self.conv2 = nn.Conv1d(out_dim, out_dim, kernel_size, padding="same")
+        self.conv2 = nn.Conv1d(out_dim, out_dim, kernel_size, padding="same")
         nn.init.uniform_(self.conv0.weight, a=-1.0, b=1.0)
         nn.init.uniform_(self.conv1.weight, a=-1.0, b=1.0)
-        #nn.init.uniform_(self.conv2.weight, a=-1.0, b=1.0)
+        nn.init.uniform_(self.conv2.weight, a=-1.0, b=1.0)
 
         self.batchnorm0 = nn.BatchNorm1d(num_features=out_dim)
         self.batchnorm1 = nn.BatchNorm1d(num_features=out_dim)
+        self.batchnorm2 = nn.BatchNorm1d(num_features=out_dim)
 
         self.dropout = nn.Dropout(p_drop)
 
@@ -178,7 +180,7 @@ class ConvBlock(nn.Module):
         X = self.conv1(X) + X  # skip connection
         X = F.gelu(self.batchnorm1(X))
 
-        #X = self.conv2(X)
-        #X = F.glu(X, dim=-2)
+        X = self.conv2(X)
+        X = F.gelu(self.batchnorm2(X))
 
         return self.dropout(X)
