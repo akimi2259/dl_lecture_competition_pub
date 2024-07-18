@@ -56,8 +56,8 @@ def run(args: DictConfig):
     # ------------------
     #     Optimizer
     # ------------------
-    #optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-3)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=5e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-3)
+    #optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)#, weight_decay=1e-5)
 
     # ------------------
     #   Start training
@@ -110,10 +110,10 @@ def run(args: DictConfig):
                 y_pred = model(X)
                 loss = F.cross_entropy(y_pred, y)
             
-            '''l1 = torch.tensor(0., requires_grad=True).to(args.device)
+            """l1 = torch.tensor(0., requires_grad=True).to(args.device)
             for w in model.parameters():
                 l1 = l1 + torch.norm(w, 1)
-            loss = loss + l1'''
+            loss = loss + l1*1e-5"""
 
             scaler.scale(loss).backward()
 

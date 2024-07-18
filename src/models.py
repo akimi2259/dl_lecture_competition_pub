@@ -115,8 +115,8 @@ class BasicConvClassifier(nn.Module):#channel * length
         super().__init__()
 
         self.blocks = nn.Sequential(
-            #ConvBlock(in_channels, in_channels),
-            #ConvBlock(in_channels, in_channels),
+            ConvBlock(in_channels, in_channels),
+            ConvBlock(in_channels, in_channels),
             ConvBlock(in_channels, hid_dim1),
             #ConvBlock(hid_dim1, hid_dim1),
         )
@@ -124,8 +124,8 @@ class BasicConvClassifier(nn.Module):#channel * length
         self.head = nn.Sequential(
             nn.AdaptiveAvgPool1d(1),
             Rearrange("b d 1 -> b d"),
-            nn.Linear(hid_dim1, num_classes),
             nn.Dropout(0.3),
+            nn.Linear(hid_dim1, num_classes),
             #nn.Dropout(0.2),
             #nn.Linear(hid_dim2, num_classes)
         )
@@ -148,7 +148,7 @@ class ConvBlock(nn.Module):
         in_dim,
         out_dim,
         kernel_size: int = 3,
-        p_drop: float = 0.3,
+        p_drop: float = 0.1,
     ) -> None:
         super().__init__()
         
